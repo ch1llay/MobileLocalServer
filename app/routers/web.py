@@ -14,3 +14,9 @@ _env = Environment(loader=FileSystemLoader(str(_templates_dir)))
 async def index():
     template = _env.get_template("index.html")
     return template.render()
+
+
+@router.get("/admin", response_class=HTMLResponse)
+async def admin():
+    template = _env.get_template("admin.html")
+    return template.render()

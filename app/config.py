@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     pin_hash: str = Field(default="", validation_alias="PIN_HASH")
     pin_salt: str = Field(default="", validation_alias="PIN_SALT")
     max_upload_mb: int = Field(default=500, validation_alias="MAX_UPLOAD_MB")
+    user_quota_gb: int = Field(default=15, validation_alias="USER_QUOTA_GB")
+    codes_file: Path = Field(default=Path("./data/upload_codes.json"), validation_alias="CODES_FILE")
 
     # Optional: for initial setup, script hashes it and outputs PIN_HASH + PIN_SALT
     pin: str | None = Field(default=None, validation_alias="PIN")
@@ -25,6 +27,10 @@ class Settings(BaseSettings):
     @property
     def max_upload_bytes(self) -> int:
         return self.max_upload_mb * 1024 * 1024
+
+    @property
+    def user_quota_bytes(self) -> int:
+        return self.user_quota_gb * 1024 * 1024 * 1024
 
     def get_upload_dir_resolved(self) -> Path:
         """Return absolute path; caller should create dir if missing."""

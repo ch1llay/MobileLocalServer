@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Админ-панель</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 1.5rem;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+      background: linear-gradient(160deg, #0f0f12 0%, #1a1a1f 50%, #141418 100%);
+      color: #e4e4e7;
+      min-height: 100vh;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      color: #fafafa;
+    }
+    h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #d4d4d8;
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid #2e2e34;
+    }
+    h2:first-of-type { margin-top: 0; }
+    .panel { display: none; }
+    .panel.visible { display: block; }
+    .card {
+      background: rgba(28, 28, 32, 0.85);
+      border: 1px solid #2e2e34;
+      border-radius: 12px;
+      padding: 1.35rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+    }
+    input[type="password"], input[type="text"], button {
+      font-size: 1rem;
+      padding: 0.65rem 1rem;
+      border-radius: 10px;
+      border: 1px solid #3f3f46;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input {
+      background: #27272a;
+      color: #fafafa;
+      max-width: 260px;
+    }
+    input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    button {
+      background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      margin-right: 0.5rem;
+      padding: 0.65rem 1.2rem;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: filter 0.2s, transform 0.05s;
+    }
+    button:hover { filter: brightness(1.08); }
+    button:active { transform: scale(0.98); }
+    button.secondary {
+      background: #3f3f46;
+      color: #d4d4d8;
+      font-weight: 500;
+    }
+    button.secondary:hover { background: #52525b; filter: none; }
+    button.danger {
+      background: linear-gradient(180deg, #dc2626 0%, #b91c1c 100%);
+      font-weight: 500;
+    }
+    button.danger:hover { filter: brightness(1.1); }
+    .error { color: #f87171; margin-top: 0.5rem; font-size: 0.9rem; }
+    .code-display {
+      font-size: 1.1rem;
+      font-family: 'Consolas', 'Monaco', monospace;
+      background: #27272a;
+      padding: 1rem 1.1rem;
+      border-radius: 10px;
+      margin: 0.5rem 0;
+      word-break: break-all;
+      border: 1px solid #3f3f46;
+      color: #fafafa;
+    }
+    .code-warning { color: #fbbf24; margin: 0.5rem 0; font-size: 0.95rem; }
+    .users-list { margin: 1rem 0; list-style: none; padding: 0; }
+    .users-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.6rem 0.75rem;
+      margin: 0 -0.75rem;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+    .users-list li:hover { background: rgba(63, 63, 70, 0.3); }
+    .users-list li .user-label { flex: 1; color: #e4e4e7; }
+    .file-tree { margin: 1rem 0; }
+    .file-tree-node { margin: 0; }
+    .file-tree-folder .file-tree-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.6rem;
+      margin: 0 -0.6rem;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .file-tree-folder .file-tree-row:hover { background: rgba(63, 63, 70, 0.4); color: #d4d4d8; }
+    .file-tree-toggle {
+      display: inline-block;
+      width: 1rem;
+      font-size: 0.7rem;
+      color: #71717a;
+    }
+    .file-tree-children { margin-left: 1rem; border-left: 1px solid #2e2e34; padding-left: 0.85rem; margin-top: 0.25rem; }
+    .file-tree-folder.collapsed .file-tree-children { display: none; }
+    .file-tree-folder.collapsed .file-tree-toggle::before { content: '▶'; }
+    .file-tree-folder:not(.collapsed) .file-tree-toggle::before { content: '▼'; }
+    .file-tree-file .file-tree-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #27272a;
+    }
+    .file-tree-file .file-tree-row a { color: #60a5fa; text-decoration: none; }
+    .file-tree-file .file-tree-row a:hover { text-decoration: underline; color: #93c5fd; }
+    .file-tree-file .file-meta { font-size: 0.85rem; color: #71717a; }
+    .file-tree-file button { margin-left: auto; }
+    .link-home { margin-top: 1.5rem; }
+    .link-home a {
+      color: #60a5fa;
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+    .link-home a:hover { text-decoration: underline; color: #93c5fd; }
+    label { cursor: pointer; color: #d4d4d8; }
+    input[type="checkbox"] { margin-right: 0.5rem; accent-color: #3b82f6; }
+  </style>
+</head>
+<body>
+  <h1>Админ-панель</h1>
+
+  <div id="loginPanel" class="panel visible">
+    <div class="card">
+      <p style="margin-top:0;">Введите пароль администратора:</p>
+      <input type="password" id="passwordInput" placeholder="Пароль" autocomplete="off" />
+      <button type="button" id="loginBtn">Войти</button>
+      <p id="loginError" class="error" style="display:none;"></p>
+    </div>
+  </div>
+
+  <div id="mainPanel" class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+      <span style="color:#a1a1aa;font-size:0.95rem;">Вы вошли в панель</span>
+      <button type="button" id="logoutBtn" class="secondary">Выйти</button>
+    </div>
+
+    <div class="card">
+    <h2 style="margin-top:0;">Создать пользователя (PIN для загрузки)</h2>
+    <p>Имя пользователя (обязательно):</p>
+    <input type="text" id="userNameInput" placeholder="Например: Alice" maxlength="64" autocomplete="off" />
+    <br>
+    <button type="button" id="createUserBtn">Создать пользователя</button>
+    <div id="newPinBlock" style="display:none;">
+      <p class="code-warning">Сохраните PIN — он больше не будет показан. Передайте его пользователю.</p>
+      <p>Пользователь: <strong id="newUserName"></strong></p>
+      <div class="code-display" id="newPinDisplay"></div>
+      <button type="button" id="copyPinBtn">Копировать PIN</button>
+    </div>
+    <p id="createUserError" class="error" style="display:none;"></p>
+    </div>
+
+    <div class="card">
+    <h2 style="margin-top:0;">Выданные PIN</h2>
+    <ul class="users-list" id="usersList"></ul>
+    </div>
+
+    <div class="card">
+    <h2 style="margin-top:0;">Настройки</h2>
+    <p style="margin-bottom:0;">
+      <label>
+        <input type="checkbox" id="parallelUploadCheckbox" />
+        Параллельная загрузка файлов (несколько файлов одновременно)
+      </label>
+    </p>
+    </div>
+
+    <div class="card">
+    <h2 style="margin-top:0;">Загруженные файлы</h2>
+    <div class="file-tree" id="fileList"></div>
+    </div>
+
+    <p class="link-home"><a href="/">На главную (загрузка)</a></p>
+  </div>
+
+  <script>
+    const TOKEN_KEY = 'token';
+    const API = '';
+
+    function getToken() {
+      return sessionStorage.getItem(TOKEN_KEY);
+    }
+
+    function setToken(token) {
+      sessionStorage.setItem(TOKEN_KEY, token);
+    }
+
+    function clearToken() {
+      sessionStorage.removeItem(TOKEN_KEY);
+    }
+
+    function show(el) {
+      el.classList.add('visible');
+    }
+
+    function hide(el) {
+      el.classList.remove('visible');
+    }
+
+    function authHeaders() {
+      const t = getToken();
+      return t ? { 'Authorization': 'Bearer ' + t } : {};
+    }
+
+    async function checkAuth() {
+      const token = getToken();
+      if (!token) {
+        show(document.getElementById('loginPanel'));
+        hide(document.getElementById('mainPanel'));
+        return;
+      }
+      const r = await fetch(API + '/api/files', { headers: authHeaders() });
+      if (r.ok) {
+        show(document.getElementById('mainPanel'));
+        hide(document.getElementById('loginPanel'));
+        loadUsers();
+        loadFileList();
+        loadSettings();
+        return;
+      }
+      clearToken();
+      show(document.getElementById('loginPanel'));
+      hide(document.getElementById('mainPanel'));
+    }
+
+    async function doLogin() {
+      const password = document.getElementById('passwordInput').value.trim();
+      const errEl = document.getElementById('loginError');
+      errEl.style.display = 'none';
+      if (!password) {
+        errEl.textContent = 'Введите пароль';
+        errEl.style.display = 'block';
+        return;
+      }
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      try {
+        const r = await fetch(API + '/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          errEl.textContent = data.detail || 'Неверный пароль';
+          errEl.style.display = 'block';
+          return;
+        }
+        setToken(data.token);
+        hide(document.getElementById('loginPanel'));
+        show(document.getElementById('mainPanel'));
+        loadUsers();
+        loadFileList();
+        loadSettings();
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function doLogout() {
+      clearToken();
+      show(document.getElementById('loginPanel'));
+      hide(document.getElementById('mainPanel'));
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('newPinBlock').style.display = 'none';
+    }
+
+    async function loadSettings() {
+      const r = await fetch(API + '/api/admin/settings', { headers: authHeaders() });
+      if (!r.ok) return;
+      const data = await r.json();
+      const cb = document.getElementById('parallelUploadCheckbox');
+      if (cb) cb.checked = !!data.parallel_upload;
+    }
+
+    async function saveSettings(parallelUpload) {
+      const r = await fetch(API + '/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ parallel_upload: parallelUpload })
+      });
+      if (!r.ok) return;
+    }
+
+    async function loadUsers() {
+      const listEl = document.getElementById('usersList');
+      listEl.innerHTML = '';
+      const r = await fetch(API + '/api/admin/users', { headers: authHeaders() });
+      if (!r.ok) return;
+      const data = await r.json();
+      const users = data.users || [];
+      users.forEach(u => {
+        const li = document.createElement('li');
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'user-label';
+        labelSpan.textContent = (u.label || '(без метки)') + ' — ' + (u.created_at ? new Date(u.created_at).toLocaleString() : '');
+        li.appendChild(labelSpan);
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'secondary danger';
+        delBtn.textContent = 'Удалить';
+        delBtn.dataset.index = String(u.index);
+        delBtn.dataset.label = u.label || '';
+        delBtn.addEventListener('click', function () {
+          const name = this.dataset.label || '(без имени)';
+          if (!confirm('Удалить пользователя «' + name + '» и всю папку с файлами?')) return;
+          const idx = this.dataset.index;
+          fetch(API + '/api/admin/users/' + idx, { method: 'DELETE', headers: authHeaders() })
+            .then(function (res) {
+              if (res.ok) {
+                loadUsers();
+                loadFileList();
+              }
+            });
+        });
+        li.appendChild(delBtn);
+        listEl.appendChild(li);
+      });
+    }
+
+    async function loadFileList() {
+      const listEl = document.getElementById('fileList');
+      listEl.innerHTML = '';
+      const r = await fetch(API + '/api/files', { headers: authHeaders() });
+      if (!r.ok) return;
+      const data = await r.json();
+      const token = getToken();
+      const files = data.files || [];
+      var bySender = {};
+      files.forEach(function (f) {
+        var sender = (f.sender != null && f.sender !== '') ? f.sender : '';
+        if (!bySender[sender]) bySender[sender] = [];
+        bySender[sender].push(f);
+      });
+      var folderLabels = Object.keys(bySender).sort(function (a, b) {
+        if (a === '') return -1;
+        if (b === '') return 1;
+        return a.localeCompare(b);
+      });
+      folderLabels.forEach(function (senderKey) {
+        var label = senderKey === '' ? 'Корень' : senderKey;
+        var groupFiles = bySender[senderKey];
+        groupFiles.sort(function (x, y) { return (y.mtime || 0) - (x.mtime || 0); });
+        var folderNode = document.createElement('div');
+        folderNode.className = 'file-tree-node file-tree-folder';
+        folderNode.dataset.folder = senderKey;
+        var row = document.createElement('div');
+        row.className = 'file-tree-row';
+        row.setAttribute('role', 'button');
+        row.setAttribute('tabindex', '0');
+        row.setAttribute('aria-expanded', 'true');
+        row.setAttribute('aria-label', 'Свернуть папку ' + label);
+        var toggle = document.createElement('span');
+        toggle.className = 'file-tree-toggle';
+        var labelSpan = document.createElement('span');
+        labelSpan.className = 'file-tree-label';
+        labelSpan.textContent = label;
+        row.appendChild(toggle);
+        row.appendChild(labelSpan);
+        row.addEventListener('click', function () {
+          var folder = this.closest('.file-tree-folder');
+          var expanded = folder.classList.toggle('collapsed');
+          this.setAttribute('aria-expanded', !expanded);
+          this.setAttribute('aria-label', (expanded ? 'Развернуть' : 'Свернуть') + ' папку ' + label);
+        });
+        folderNode.appendChild(row);
+        var children = document.createElement('div');
+        children.className = 'file-tree-children';
+        groupFiles.forEach(function (f) {
+          var path = f.path || f.name;
+          var fileNode = document.createElement('div');
+          fileNode.className = 'file-tree-node file-tree-file';
+          var fileRow = document.createElement('div');
+          fileRow.className = 'file-tree-row';
+          var a = document.createElement('a');
+          a.href = API + '/api/files/' + encodeURIComponent(path) + (token ? '?token=' + encodeURIComponent(token) : '');
+          a.textContent = f.name;
+          a.setAttribute('download', f.name);
+          var meta = document.createElement('span');
+          meta.className = 'file-meta';
+          meta.textContent = formatSize(f.size) + ' · ' + formatDate(f.mtime);
+          var delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'secondary danger';
+          delBtn.textContent = 'Удалить';
+          delBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!confirm('Удалить файл «' + f.name + '»?')) return;
+            fetch(API + '/api/files/' + encodeURIComponent(path), { method: 'DELETE', headers: authHeaders() })
+              .then(function (res) {
+                if (res.ok) loadFileList();
+              });
+          });
+          fileRow.appendChild(a);
+          fileRow.appendChild(meta);
+          fileRow.appendChild(delBtn);
+          fileNode.appendChild(fileRow);
+          children.appendChild(fileNode);
+        });
+        folderNode.appendChild(children);
+        listEl.appendChild(folderNode);
+      });
+    }
+
+    function formatSize(n) {
+      if (n < 1024) return n + ' B';
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+      return (n / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function formatDate(ts) {
+      if (!ts) return '';
+      const d = new Date(ts * 1000);
+      return d.toLocaleString();
+    }
+
+    async function createUser() {
+      const errEl = document.getElementById('createUserError');
+      const pinBlock = document.getElementById('newPinBlock');
+      const pinDisplay = document.getElementById('newPinDisplay');
+      const nameEl = document.getElementById('newUserName');
+      errEl.style.display = 'none';
+      pinBlock.style.display = 'none';
+      const name = (document.getElementById('userNameInput').value || '').trim();
+      if (!name) {
+        errEl.textContent = 'Укажите имя пользователя';
+        errEl.style.display = 'block';
+        return;
+      }
+      const r = await fetch(API + '/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ name })
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        errEl.textContent = data.detail || r.statusText;
+        errEl.style.display = 'block';
+        return;
+      }
+      pinDisplay.textContent = data.pin;
+      nameEl.textContent = data.name || name;
+      pinBlock.style.display = 'block';
+      loadUsers();
+    }
+
+    function copyPin() {
+      const pinDisplay = document.getElementById('newPinDisplay');
+      const pin = pinDisplay.textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pin).then(() => {});
+      }
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', doLogin);
+    document.getElementById('passwordInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+    document.getElementById('createUserBtn').addEventListener('click', createUser);
+    document.getElementById('copyPinBtn').addEventListener('click', copyPin);
+    document.getElementById('parallelUploadCheckbox').addEventListener('change', function () {
+      saveSettings(this.checked);
+    });
+
+    checkAuth();
+  </script>
+</body>
+</html>

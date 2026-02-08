@@ -8,222 +8,419 @@
     * { box-sizing: border-box; }
     body {
       font-family: system-ui, -apple-system, sans-serif;
+      font-size: 16px;
       margin: 0;
-      padding: 1rem;
-      max-width: 600px;
+      padding: 1.25rem;
+      max-width: 620px;
       margin-left: auto;
       margin-right: auto;
-      background: #1a1a1a;
-      color: #e0e0e0;
+      background: #1e1e1e;
+      color: #e2e2e2;
       min-height: 100vh;
+      line-height: 1.5;
     }
-    h1 { font-size: 1.25rem; margin-top: 0; }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+    }
     .panel { display: none; }
     .panel.visible { display: block; }
-    #loginPanel { margin-top: 2rem; }
+    .card {
+      background: #252525;
+      border: 1px solid #3a3a3a;
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
     input[type="password"], input[type="text"], button {
       font-size: 1rem;
-      padding: 0.6rem 0.8rem;
-      border-radius: 6px;
+      padding: 0.6rem 0.9rem;
+      border-radius: 8px;
       border: 1px solid #444;
     }
-    input { background: #2a2a2a; color: #e0e0e0; width: 100%; max-width: 200px; }
+    input {
+      background: #2a2a2a;
+      color: #e2e2e2;
+      width: 100%;
+      max-width: 280px;
+      display: block;
+      margin-bottom: 0.75rem;
+    }
     button {
       background: #0d6efd;
       color: #fff;
       border: none;
       cursor: pointer;
       margin-top: 0.5rem;
+      padding: 0.6rem 1rem;
     }
     button:hover { background: #0b5ed7; }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
-    .error { color: #f66; margin-top: 0.5rem; }
+    button.secondary { background: #555; }
+    button.secondary:hover { background: #444; }
+    .error { color: #f66; margin-top: 0.5rem; font-size: 0.95rem; }
     .upload-zone {
       border: 2px dashed #555;
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 2rem;
       text-align: center;
       margin: 1rem 0;
       cursor: pointer;
+      background: #252525;
+      border-color: #3a3a3a;
     }
-    .upload-zone.dragover { border-color: #0d6efd; background: #252525; }
+    .upload-zone:hover { border-color: #555; }
+    .upload-zone.dragover { border-color: #0d6efd; background: #2a2a2a; }
     .upload-zone input { display: none; }
-    .file-list { list-style: none; padding: 0; margin: 1rem 0; }
-    .file-list li {
+    .upload-zone p { margin: 0; font-size: 1rem; color: #aaa; }
+    .link-admin { margin-top: 2rem; }
+    .link-admin a { color: #6af; text-decoration: none; }
+    .link-admin a:hover { text-decoration: underline; }
+    .greeting { font-size: 1.15rem; font-weight: 600; margin: 0 0 1rem 0; }
+    .my-files { margin-top: 1.5rem; }
+    .my-files h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #aaa;
+      margin-bottom: 0.75rem;
+    }
+    .my-files ul { list-style: none; padding: 0; margin: 0; }
+    .my-files li {
+      padding: 0.6rem 0;
+      border-bottom: 1px solid #333;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid #333;
+      gap: 0.75rem;
+      flex-wrap: wrap;
     }
-    .file-list a { color: #6af; text-decoration: none; }
-    .file-list a:hover { text-decoration: underline; }
-    .file-meta { font-size: 0.85rem; color: #888; }
+    .my-files li .name { flex: 1 1 auto; word-break: break-all; }
+    .my-files li .meta { color: #999; font-size: 0.9rem; }
+    .my-files li a {
+      color: #6af;
+      text-decoration: none;
+    }
+    .my-files li a:hover { text-decoration: underline; }
+    .muted { color: #888; font-size: 0.95rem; margin-top: 0.5rem; }
+    .upload-progress-list { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .upload-progress-item {
+      background: #252525;
+      border: 1px solid #3a3a3a;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+    }
+    .upload-progress-item .name { font-size: 0.95rem; word-break: break-all; margin-bottom: 0.35rem; }
+    .upload-progress-item progress {
+      width: 100%;
+      max-width: 100%;
+      height: 10px;
+      margin: 0.35rem 0;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .upload-progress-item progress:indeterminate { opacity: 0.8; }
+    .upload-progress-item .status { font-size: 0.9rem; color: #aaa; display: inline; }
+    .upload-progress-item .upload-progress-size { font-size: 0.9rem; color: #888; margin-left: 0.5rem; }
+    .upload-progress-item .status.done { color: #5a9; }
+    .upload-progress-item .status.err { color: #f66; }
+    .upload-progress-item .meta { font-size: 0.85rem; color: #888; margin-top: 0.2rem; display: block; }
   </style>
 </head>
 <body>
   <h1>Мобильный сервер загрузки</h1>
 
-  <div id="loginPanel" class="panel visible">
-    <p>Введите PIN для доступа:</p>
-    <input type="password" id="pinInput" placeholder="PIN" autocomplete="off" />
-    <br>
-    <button type="button" id="loginBtn">Войти</button>
-    <p id="loginError" class="error" style="display:none;"></p>
+  <div id="enterCodePanel" class="panel visible">
+    <div class="card">
+      <p style="margin-top:0;">Введите код (получите у администратора):</p>
+      <input type="password" id="codeInput" placeholder="Код" autocomplete="off" inputmode="numeric" />
+      <button type="button" id="enterBtn">Войти</button>
+      <p id="codeError" class="error" style="display:none;"></p>
+    </div>
   </div>
 
-  <div id="mainPanel" class="panel">
-    <div class="upload-zone" id="uploadZone">
+  <div id="uploadPanel" class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+      <p class="greeting" id="greetingText" style="margin:0;"></p>
+      <button type="button" id="logoutBtn" class="secondary">Выйти</button>
+    </div>
+    <div class="upload-zone card" id="uploadZone">
       <input type="file" id="fileInput" multiple />
       <p>Перетащите файлы сюда или нажмите для выбора</p>
     </div>
     <p id="uploadStatus" class="error" style="display:none;"></p>
-    <h2>Загруженные файлы</h2>
-    <ul class="file-list" id="fileList"></ul>
+    <div id="uploadProgressList" class="upload-progress-list"></div>
+    <section class="my-files" aria-label="Ваши файлы">
+      <h2>Ваши файлы</h2>
+      <p id="myFilesError" class="error" style="display:none;"></p>
+      <ul id="myFilesList"></ul>
+      <p id="myFilesEmpty" class="muted" style="display:none;">Загруженные файлы появятся здесь.</p>
+    </section>
   </div>
-
   <script>
-    const TOKEN_KEY = 'token';
     const API = '';
+    const PIN_KEY = 'pin';
+    const NAME_KEY = 'name';
 
-    function getToken() {
-      return sessionStorage.getItem(TOKEN_KEY);
+    function getStoredPin() { return sessionStorage.getItem(PIN_KEY); }
+    function getStoredName() { return sessionStorage.getItem(NAME_KEY); }
+    function setStored(pin, name) {
+      sessionStorage.setItem(PIN_KEY, pin);
+      sessionStorage.setItem(NAME_KEY, name);
+    }
+    function clearStored() {
+      sessionStorage.removeItem(PIN_KEY);
+      sessionStorage.removeItem(NAME_KEY);
     }
 
-    function setToken(token) {
-      sessionStorage.setItem(TOKEN_KEY, token);
+    function showPanel(id) {
+      document.getElementById('enterCodePanel').classList.toggle('visible', id === 'enterCodePanel');
+      document.getElementById('uploadPanel').classList.toggle('visible', id === 'uploadPanel');
     }
 
-    function clearToken() {
-      sessionStorage.removeItem(TOKEN_KEY);
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' Б';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
+      if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
+      return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' ГБ';
     }
 
-    function show(el) {
-      el.classList.add('visible');
-    }
-
-    function hide(el) {
-      el.classList.remove('visible');
-    }
-
-    function authHeaders() {
-      const t = getToken();
-      return t ? { 'Authorization': 'Bearer ' + t } : {};
-    }
-
-    async function checkAuth() {
-      const token = getToken();
-      if (!token) {
-        show(document.getElementById('loginPanel'));
-        hide(document.getElementById('mainPanel'));
-        return;
-      }
-      const r = await fetch(API + '/api/files', { headers: authHeaders() });
-      if (r.ok) {
-        show(document.getElementById('mainPanel'));
-        hide(document.getElementById('loginPanel'));
-        loadFileList();
-        return;
-      }
-      clearToken();
-      show(document.getElementById('loginPanel'));
-      hide(document.getElementById('mainPanel'));
-    }
-
-    async function doLogin() {
-      const pin = document.getElementById('pinInput').value.trim();
-      const errEl = document.getElementById('loginError');
+    async function loadMyFiles() {
+      const pin = getStoredPin();
+      const listEl = document.getElementById('myFilesList');
+      const emptyEl = document.getElementById('myFilesEmpty');
+      const errEl = document.getElementById('myFilesError');
       errEl.style.display = 'none';
-      if (!pin) {
-        errEl.textContent = 'Введите PIN';
-        errEl.style.display = 'block';
-        return;
-      }
-      const btn = document.getElementById('loginBtn');
-      btn.disabled = true;
+      emptyEl.style.display = 'none';
+      listEl.innerHTML = '';
+      if (!pin) return;
       try {
-        const r = await fetch(API + '/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin })
-        });
+        const r = await fetch(API + '/api/my-files?pin=' + encodeURIComponent(pin));
         const data = await r.json().catch(() => ({}));
         if (!r.ok) {
-          errEl.textContent = data.detail || 'Неверный PIN';
+          errEl.textContent = 'Не удалось загрузить список файлов';
           errEl.style.display = 'block';
           return;
         }
-        setToken(data.token);
-        hide(document.getElementById('loginPanel'));
-        show(document.getElementById('mainPanel'));
-        loadFileList();
+        const files = data.files || [];
+        if (files.length === 0) {
+          emptyEl.style.display = 'block';
+          return;
+        }
+        files.forEach(function (f) {
+          const li = document.createElement('li');
+          const downloadUrl = API + '/api/my-files/files/' + encodeURIComponent(f.name) + '?pin=' + encodeURIComponent(pin);
+          const dateStr = f.mtime ? new Date(f.mtime * 1000).toLocaleString() : '';
+          li.innerHTML = '<span class="name">' + escapeHtml(f.name) + '</span>' +
+            '<span class="meta">' + formatSize(f.size) + (dateStr ? ' · ' + dateStr : '') + '</span>' +
+            '<a href="' + escapeHtml(downloadUrl) + '" download target="_blank" rel="noopener">Скачать</a>';
+          listEl.appendChild(li);
+        });
+      } catch (_) {
+        errEl.textContent = 'Не удалось загрузить список файлов';
+        errEl.style.display = 'block';
+      }
+    }
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    function showUploadState() {
+      const name = getStoredName();
+      document.getElementById('greetingText').textContent = name ? 'Привет, ' + name + '!' : 'Привет!';
+      showPanel('uploadPanel');
+      loadMyFiles();
+    }
+
+    function showEnterCodeState() {
+      clearStored();
+      document.getElementById('codeInput').value = '';
+      document.getElementById('codeError').style.display = 'none';
+      showPanel('enterCodePanel');
+    }
+
+    async function doEnterCode() {
+      const code = (document.getElementById('codeInput').value || '').trim();
+      const errEl = document.getElementById('codeError');
+      errEl.style.display = 'none';
+      if (!code) {
+        errEl.textContent = 'Введите код';
+        errEl.style.display = 'block';
+        return;
+      }
+      const btn = document.getElementById('enterBtn');
+      btn.disabled = true;
+      try {
+        const r = await fetch(API + '/api/verify-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: code })
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          errEl.textContent = data.detail || 'Неверный или просроченный код';
+          errEl.style.display = 'block';
+          return;
+        }
+        setStored(code, data.name || '');
+        showUploadState();
       } finally {
         btn.disabled = false;
       }
     }
 
-    async function loadFileList() {
-      const listEl = document.getElementById('fileList');
-      listEl.innerHTML = '';
-      const r = await fetch(API + '/api/files', { headers: authHeaders() });
-      if (!r.ok) return;
-      const data = await r.json();
-      const token = getToken();
-      const files = data.files || [];
-      files.forEach(f => {
-        const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.href = API + '/api/files/' + encodeURIComponent(f.name) + (token ? '?token=' + encodeURIComponent(token) : '');
-        a.textContent = f.name;
-        a.setAttribute('download', f.name);
-        const meta = document.createElement('span');
-        meta.className = 'file-meta';
-        meta.textContent = formatSize(f.size) + ' · ' + formatDate(f.mtime);
-        li.appendChild(a);
-        li.appendChild(meta);
-        listEl.appendChild(li);
+    function uploadOneFile(file, pin, onProgress) {
+      return new Promise(function (resolve) {
+        const startTime = Date.now();
+        const fd = new FormData();
+        fd.append('pin', pin);
+        fd.append('file', file);
+        const xhr = new XMLHttpRequest();
+        xhr.upload.addEventListener('progress', function (e) {
+          if (e.lengthComputable) {
+            onProgress(e.loaded, e.total);
+          } else {
+            onProgress(e.loaded, 0);
+          }
+        });
+        xhr.addEventListener('load', function () {
+          const durationSeconds = (Date.now() - startTime) / 1000;
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve({ ok: true, durationSeconds: durationSeconds });
+          } else {
+            var err = '';
+            try {
+              var j = JSON.parse(xhr.responseText);
+              err = j.detail || xhr.statusText;
+            } catch (_) {
+              err = xhr.statusText;
+            }
+            resolve({ ok: false, error: err, durationSeconds: durationSeconds });
+          }
+        });
+        xhr.addEventListener('error', function () {
+          const durationSeconds = (Date.now() - startTime) / 1000;
+          resolve({ ok: false, error: 'Ошибка сети', durationSeconds: durationSeconds });
+        });
+        xhr.open('POST', API + '/api/upload');
+        xhr.send(fd);
       });
     }
 
-    function formatSize(n) {
-      if (n < 1024) return n + ' B';
-      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
-      return (n / (1024 * 1024)).toFixed(1) + ' MB';
-    }
-
-    function formatDate(ts) {
-      if (!ts) return '';
-      const d = new Date(ts * 1000);
-      return d.toLocaleString();
+    function addProgressRow(fileName, fileSize) {
+      const listEl = document.getElementById('uploadProgressList');
+      const item = document.createElement('div');
+      item.className = 'upload-progress-item';
+      item.dataset.filename = fileName;
+      const nameEl = document.createElement('div');
+      nameEl.className = 'name';
+      nameEl.textContent = fileName;
+      const progressEl = document.createElement('progress');
+      progressEl.setAttribute('max', 100);
+      progressEl.value = 0;
+      const statusEl = document.createElement('div');
+      statusEl.className = 'status';
+      statusEl.textContent = 'Загрузка…';
+      const sizeEl = document.createElement('span');
+      sizeEl.className = 'upload-progress-size';
+      sizeEl.textContent = '';
+      const metaEl = document.createElement('div');
+      metaEl.className = 'meta';
+      metaEl.textContent = '';
+      item.appendChild(nameEl);
+      item.appendChild(progressEl);
+      item.appendChild(statusEl);
+      item.appendChild(sizeEl);
+      item.appendChild(metaEl);
+      listEl.appendChild(item);
+      return {
+        setProgress: function (loaded, total) {
+          if (total > 0) {
+            progressEl.value = Math.round((loaded / total) * 100);
+            sizeEl.textContent = formatSize(loaded) + ' из ' + formatSize(total);
+          } else {
+            sizeEl.textContent = loaded > 0 ? formatSize(loaded) : '';
+          }
+        },
+        setDone: function (durationSeconds) {
+          progressEl.value = 100;
+          statusEl.textContent = 'Готово';
+          statusEl.className = 'status done';
+          sizeEl.textContent = '';
+          var meta = durationSeconds.toFixed(1) + ' с';
+          if (durationSeconds >= 0.001 && fileSize > 0) {
+            var speedMb = (fileSize / (1024 * 1024)) / durationSeconds;
+            meta += ' · ' + speedMb.toFixed(2) + ' МБ/с';
+          }
+          metaEl.textContent = meta;
+        },
+        setError: function (err, durationSeconds) {
+          progressEl.value = 0;
+          statusEl.textContent = 'Ошибка: ' + err;
+          statusEl.className = 'status err';
+          sizeEl.textContent = '';
+          if (durationSeconds != null && durationSeconds >= 0) {
+            metaEl.textContent = durationSeconds.toFixed(1) + ' с';
+          }
+        }
+      };
     }
 
     async function uploadFiles(files) {
       const statusEl = document.getElementById('uploadStatus');
       statusEl.style.display = 'none';
       if (!files.length) return;
-      const token = getToken();
-      for (const file of files) {
-        const fd = new FormData();
-        fd.append('file', file);
-        const r = await fetch(API + '/api/upload', {
-          method: 'POST',
-          headers: authHeaders(),
-          body: fd
+      const pin = getStoredPin();
+      if (!pin) {
+        statusEl.textContent = 'Сессия истекла. Войдите снова.';
+        statusEl.style.display = 'block';
+        showEnterCodeState();
+        return;
+      }
+      var parallel = false;
+      try {
+        const r = await fetch(API + '/api/settings');
+        if (r.ok) {
+          const data = await r.json();
+          parallel = !!data.parallel_upload;
+        }
+      } catch (_) {}
+      document.getElementById('uploadProgressList').innerHTML = '';
+      var rows = [];
+      for (var i = 0; i < files.length; i++) {
+        rows.push(addProgressRow(files[i].name, files[i].size));
+      }
+      function doOne(file, row) {
+        return uploadOneFile(file, pin, function (loaded, total) {
+          row.setProgress(loaded, total);
+        }).then(function (result) {
+          if (result.ok) {
+            row.setDone(result.durationSeconds != null ? result.durationSeconds : 0);
+          } else {
+            row.setError(result.error || 'Ошибка', result.durationSeconds);
+          }
         });
-        if (!r.ok) {
-          const err = await r.json().catch(() => ({}));
-          statusEl.textContent = 'Ошибка: ' + (err.detail || r.statusText);
-          statusEl.style.display = 'block';
-          return;
+      }
+      if (parallel) {
+        await Promise.all(files.map(function (file, i) { return doOne(file, rows[i]); }));
+      } else {
+        for (var j = 0; j < files.length; j++) {
+          await doOne(files[j], rows[j]);
         }
       }
-      loadFileList();
+      statusEl.style.display = 'none';
+      statusEl.textContent = '';
+      loadMyFiles();
     }
 
-    document.getElementById('loginBtn').addEventListener('click', doLogin);
-    document.getElementById('pinInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') doLogin();
+    document.getElementById('enterBtn').addEventListener('click', doEnterCode);
+    document.getElementById('codeInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doEnterCode();
     });
+    document.getElementById('logoutBtn').addEventListener('click', showEnterCodeState);
 
     const uploadZone = document.getElementById('uploadZone');
     const fileInput = document.getElementById('fileInput');
@@ -243,7 +440,11 @@
       if (e.dataTransfer.files.length) uploadFiles(Array.from(e.dataTransfer.files));
     });
 
-    checkAuth();
+    if (getStoredPin() && getStoredName()) {
+      showUploadState();
+    } else {
+      showEnterCodeState();
+    }
   </script>
 </body>
 </html>
