@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Загрузка файлов</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 1rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+    h1 { font-size: 1.25rem; margin-top: 0; }
+    .panel { display: none; }
+    .panel.visible { display: block; }
+    #loginPanel { margin-top: 2rem; }
+    input[type="password"], input[type="text"], button {
+      font-size: 1rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: 6px;
+      border: 1px solid #444;
+    }
+    input { background: #2a2a2a; color: #e0e0e0; width: 100%; max-width: 200px; }
+    button {
+      background: #0d6efd;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+    button:hover { background: #0b5ed7; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .error { color: #f66; margin-top: 0.5rem; }
+    .upload-zone {
+      border: 2px dashed #555;
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      margin: 1rem 0;
+      cursor: pointer;
+    }
+    .upload-zone.dragover { border-color: #0d6efd; background: #252525; }
+    .upload-zone input { display: none; }
+    .file-list { list-style: none; padding: 0; margin: 1rem 0; }
+    .file-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #333;
+    }
+    .file-list a { color: #6af; text-decoration: none; }
+    .file-list a:hover { text-decoration: underline; }
+    .file-meta { font-size: 0.85rem; color: #888; }
+  </style>
+</head>
+<body>
+  <h1>Мобильный сервер загрузки</h1>
+
+  <div id="loginPanel" class="panel visible">
+    <p>Введите PIN для доступа:</p>
+    <input type="password" id="pinInput" placeholder="PIN" autocomplete="off" />
+    <br>
+    <button type="button" id="loginBtn">Войти</button>
+    <p id="loginError" class="error" style="display:none;"></p>
+  </div>
+
+  <div id="mainPanel" class="panel">
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" multiple />
+      <p>Перетащите файлы сюда или нажмите для выбора</p>
+    </div>
+    <p id="uploadStatus" class="error" style="display:none;"></p>
+    <h2>Загруженные файлы</h2>
+    <ul class="file-list" id="fileList"></ul>
+  </div>
+
+  <script>
+    const TOKEN_KEY = 'token';
+    const API = '';
+
+    function getToken() {
+      return sessionStorage.getItem(TOKEN_KEY);
+    }
+
+    function setToken(token) {
+      sessionStorage.setItem(TOKEN_KEY, token);
+    }
+
+    function clearToken() {
+      sessionStorage.removeItem(TOKEN_KEY);
+    }
+
+    function show(el) {
+      el.classList.add('visible');
+    }
+
+    function hide(el) {
+      el.classList.remove('visible');
+    }
+
+    function authHeaders() {
+      const t = getToken();
+      return t ? { 'Authorization': 'Bearer ' + t } : {};
+    }
+
+    async function checkAuth() {
+      const token = getToken();
+      if (!token) {
+        show(document.getElementById('loginPanel'));
+        hide(document.getElementById('mainPanel'));
+        return;
+      }
+      const r = await fetch(API + '/api/files', { headers: authHeaders() });
+      if (r.ok) {
+        show(document.getElementById('mainPanel'));
+        hide(document.getElementById('loginPanel'));
+        loadFileList();
+        return;
+      }
+      clearToken();
+      show(document.getElementById('loginPanel'));
+      hide(document.getElementById('mainPanel'));
+    }
+
+    async function doLogin() {
+      const pin = document.getElementById('pinInput').value.trim();
+      const errEl = document.getElementById('loginError');
+      errEl.style.display = 'none';
+      if (!pin) {
+        errEl.textContent = 'Введите PIN';
+        errEl.style.display = 'block';
+        return;
+      }
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      try {
+        const r = await fetch(API + '/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin })
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          errEl.textContent = data.detail || 'Неверный PIN';
+          errEl.style.display = 'block';
+          return;
+        }
+        setToken(data.token);
+        hide(document.getElementById('loginPanel'));
+        show(document.getElementById('mainPanel'));
+        loadFileList();
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function loadFileList() {
+      const listEl = document.getElementById('fileList');
+      listEl.innerHTML = '';
+      const r = await fetch(API + '/api/files', { headers: authHeaders() });
+      if (!r.ok) return;
+      const data = await r.json();
+      const token = getToken();
+      const files = data.files || [];
+      files.forEach(f => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = API + '/api/files/' + encodeURIComponent(f.name) + (token ? '?token=' + encodeURIComponent(token) : '');
+        a.textContent = f.name;
+        a.setAttribute('download', f.name);
+        const meta = document.createElement('span');
+        meta.className = 'file-meta';
+        meta.textContent = formatSize(f.size) + ' · ' + formatDate(f.mtime);
+        li.appendChild(a);
+        li.appendChild(meta);
+        listEl.appendChild(li);
+      });
+    }
+
+    function formatSize(n) {
+      if (n < 1024) return n + ' B';
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+      return (n / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function formatDate(ts) {
+      if (!ts) return '';
+      const d = new Date(ts * 1000);
+      return d.toLocaleString();
+    }
+
+    async function uploadFiles(files) {
+      const statusEl = document.getElementById('uploadStatus');
+      statusEl.style.display = 'none';
+      if (!files.length) return;
+      const token = getToken();
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append('file', file);
+        const r = await fetch(API + '/api/upload', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: fd
+        });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          statusEl.textContent = 'Ошибка: ' + (err.detail || r.statusText);
+          statusEl.style.display = 'block';
+          return;
+        }
+      }
+      loadFileList();
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', doLogin);
+    document.getElementById('pinInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    uploadZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length) uploadFiles(Array.from(fileInput.files));
+      fileInput.value = '';
+    });
+    uploadZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) uploadFiles(Array.from(e.dataTransfer.files));
+    });
+
+    checkAuth();
+  </script>
+</body>
+</html>
